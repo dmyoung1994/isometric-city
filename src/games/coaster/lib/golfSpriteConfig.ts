@@ -42,6 +42,20 @@ export const GOLF_SPRITE_SHEETS: SpriteSheet[] = [
         offsetY: -10,
         scale: 0.8,
       },
+      {
+        name: 'golf_ball',
+        row: 1,
+        col: 0,
+        offsetY: -5,
+        scale: 0.5,
+      },
+      {
+        name: 'player_avatar',
+        row: 1,
+        col: 1,
+        offsetY: -5,
+        scale: 0.5,
+      },
     ],
   },
 ];

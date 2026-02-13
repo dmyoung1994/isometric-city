@@ -1,7 +1,7 @@
 import { useGolf } from '../context/GolfContext';
 
 export const useGolfTools = () => {
-  const { updateGolfState } = useGolf();
+  const { updateGolfState, addBall, hitBall, addPlayer } = useGolf();
 
   const placeFairway = (x: number, y: number) => {
     console.log(`Placing fairway at (${x}, ${y})`);
@@ -23,11 +23,26 @@ export const useGolfTools = () => {
     console.log(`Placing tee box at (${x}, ${y})`);
   };
 
+  const addGolfBall = (x: number, y: number) => {
+    addBall(x, y);
+  };
+
+  const hitGolfBall = (ballId: string, power: number, direction: number) => {
+    hitBall(ballId, power, direction);
+  };
+
+  const addGolfPlayer = (name: string, x: number, y: number) => {
+    addPlayer(name, x, y);
+  };
+
   return {
     placeFairway,
     placeGreen,
     placeSandTrap,
     placeWaterHazard,
     placeTeeBox,
+    addGolfBall,
+    hitGolfBall,
+    addGolfPlayer,
   };
 };
