@@ -44,7 +44,7 @@ export function drawGolfCourseElement(
  * Draws a golf ball on the canvas.
  */
 export function drawGolfBall(
-  ctx: CanvasRenderingContext意图
+  ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   tileWidth: number,
@@ -57,7 +57,7 @@ export function drawGolfBall(
  * Draws a golf staff member on the canvas.
  */
 export function drawGolfStaff(
-  ctx: CanvasRenderingContext2D,
+  ctx: CanvasRenderingContext意图
   x: number,
   y: number,
   tileWidth: number,
