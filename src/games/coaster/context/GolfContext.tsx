@@ -8,7 +8,7 @@ interface GolfCourseState {
   clubhouseBuilt: boolean;
   drivingRangeBuilt: boolean;
   balls: GolfBall[];
-  players: Player[];
+  // Removed Player[] and related logic
 }
 
 interface GolfContextType {
@@ -16,7 +16,7 @@ interface GolfContextType {
   updateGolfState: (updates: Partial<GolfCourseState>) => void;
   addBall: (x: number, y: number) => void;
   hitBall: (ballId: string, power: number, direction: number) => void;
-  addPlayer: (name: string, x: number, y: number) => void;
+  // Removed addPlayer and related logic
 }
 
 const GolfContext = createContext<GolfContextType | undefined>(undefined);
@@ -30,7 +30,6 @@ export const GolfProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clubhouseBuilt: false,
     drivingRangeBuilt: false,
     balls: [],
-    players: [],
   });
 
   const updateGolfState = (updates: Partial<GolfCourseState>) => {
@@ -67,20 +66,8 @@ export const GolfProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const addPlayer = (name: string, x: number, y: number) => {
-    const newPlayer: Player = {
-      id: `player-${Date.now()}`,
-      name,
-      positionX: x,
-      positionY: y,
-      score: 0,
-      strokes: 0,
-    };
-    updateGolfState({ players: [...golfState.players, newPlayer] });
-  };
-
   return (
-    <GolfContext.Provider value={{ golfState, updateGolfState, addBall, hitBall, addPlayer }}>
+    <GolfContext.Provider value={{ golfState, updateGolfState, addBall, hitBall }}>
       {children}
     </GolfContext.Provider>
   );

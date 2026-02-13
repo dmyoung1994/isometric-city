@@ -20,20 +20,10 @@ export interface GolfBall {
   isStuck: boolean;
 }
 
-export interface Player {
-  id: string;
-  name: string;
-  positionX: number;
-  positionY: number;
-  score: number;
-  strokes: number;
-}
-
 export interface GolfCourseState {
   holes: HoleType[];
   maintenanceCost: number;
   playerSatisfaction: number;
   courseRating: number;
   balls: GolfBall[];
-  players: Player[];
 }

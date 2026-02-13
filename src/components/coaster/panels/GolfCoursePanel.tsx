@@ -2,7 +2,7 @@ import React from 'react';
 import { useGolf } from '@/games/coaster/context/GolfContext';
 
 export function GolfCoursePanel({ onClose }: { onClose: () => void }) {
-  const { golfState, updateGolfState, addBall, addPlayer } = useGolf();
+  const { golfState, updateGolfState, addBall } = useGolf();
 
   const handleAddBall = () => {
     // For simplicity, place a ball at the tee box (first hole)
@@ -10,10 +10,6 @@ export function GolfCoursePanel({ onClose }: { onClose: () => void }) {
     if (firstHole === 'par3') {
       addBall(100, 100); // Example coordinates
     }
-  };
-
-  const handleAddPlayer = () => {
-    addPlayer("Player 1", 50, 50);
   };
 
   return (
@@ -53,14 +49,6 @@ export function GolfCoursePanel({ onClose }: { onClose: () => void }) {
             className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
             Add Golf Ball
-          </button>
-        </div>
-        <div>
-          <button
-            onClick={handleAddPlayer}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Add Player
           </button>
         </div>
       </div>
