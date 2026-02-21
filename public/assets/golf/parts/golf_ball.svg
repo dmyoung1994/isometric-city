@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" shape-rendering="crispEdges">
+<defs>
+<linearGradient id="baseShade" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+<stop offset="100%" stop-color="#000000" stop-opacity="0.15"/>
+</linearGradient>
+</defs>
+<circle cx="64" cy="56" r="6" fill="#f8fafc" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+<circle cx="60" cy="54" r="1.5" fill="rgba(0,0,0,0.12)"/>
+</svg>

@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { GameProvider } from '@/context/GameContext';
 import { MultiplayerContextProvider } from '@/context/MultiplayerContext';
 import Game from '@/components/Game';
+import { BiomeSelectModal } from '@/components/game/BiomeSelectModal';
 import { CoopModal } from '@/components/multiplayer/CoopModal';
 import { useMobile } from '@/hooks/useMobile';
 import { getSpritePack, getSpriteCoords, DEFAULT_SPRITE_PACK_ID } from '@/lib/renderConfig';
+import { createInitialGameState, DEFAULT_GRID_SIZE } from '@/lib/simulation';
+import type { BiomeId } from '@/lib/biomes';
 import { SavedCityMeta, GameState } from '@/types/game';
 import { decompressFromUTF16, compressToUTF16 } from 'lz-string';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
@@ -321,6 +324,7 @@ export default function HomePage() {
   const [isChecking, setIsChecking] = useState(true);
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   const [hasSaved, setHasSaved] = useState(false);
+  const [showBiomeModal, setShowBiomeModal] = useState(false);
   const [showCoopModal, setShowCoopModal] = useState(false);
   const [isMultiplayer, setIsMultiplayer] = useState(false);
   const [startFreshGame, setStartFreshGame] = useState(false);
@@ -359,6 +363,18 @@ export default function HomePage() {
     setHasSaved(hasSavedGame());
     // Clear room code from URL
     window.history.replaceState({}, '', '/');
+  };
+
+  const handleStartNewGame = (biome: BiomeId) => {
+    try {
+      const initialState = createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity', biome);
+      const compressed = compressToUTF16(JSON.stringify(initialState));
+      localStorage.setItem(STORAGE_KEY, compressed);
+      setStartFreshGame(false);
+      setShowGame(true);
+    } catch (e) {
+      console.error('Failed to start new game:', e);
+    }
   };
 
   // Load a saved city
@@ -488,11 +504,19 @@ export default function HomePage() {
           
           {/* Buttons - more compact */}
           <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-xs flex-shrink-0">
+            {hasSaved && (
+              <Button 
+                onClick={() => setShowGame(true)}
+                className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+              >
+                <T>Continue</T>
+              </Button>
+            )}
             <Button 
-              onClick={() => setShowGame(true)}
+              onClick={() => setShowBiomeModal(true)}
               className="w-full py-4 sm:py-6 text-lg sm:text-xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
             >
-              {hasSaved ? <T>Continue</T> : <T>New Game</T>}
+              <T>New Game</T>
             </Button>
 
             <Button
@@ -580,6 +604,14 @@ export default function HomePage() {
             onStartGame={handleCoopStart}
             pendingRoomCode={pendingRoomCode}
           />
+          <BiomeSelectModal
+            open={showBiomeModal}
+            onOpenChange={setShowBiomeModal}
+            onConfirm={(biome) => {
+              setShowBiomeModal(false);
+              handleStartNewGame(biome);
+            }}
+          />
         </main>
       </MultiplayerContextProvider>
     );
@@ -597,11 +629,19 @@ export default function HomePage() {
               IsoCity
             </h1>
             <div className="flex flex-col gap-3">
+              {hasSaved && (
+                <Button 
+                  onClick={() => setShowGame(true)}
+                  className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
+                >
+                  <T>Continue</T>
+                </Button>
+              )}
               <Button 
-                onClick={() => setShowGame(true)}
+                onClick={() => setShowBiomeModal(true)}
                 className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
               >
-                {hasSaved ? <T>Continue</T> : <T>New Game</T>}
+                <T>New Game</T>
               </Button>
               <Button
                 onClick={() => setShowCoopModal(true)}
@@ -690,6 +730,14 @@ export default function HomePage() {
           onOpenChange={setShowCoopModal}
           onStartGame={handleCoopStart}
           pendingRoomCode={pendingRoomCode}
+        />
+        <BiomeSelectModal
+          open={showBiomeModal}
+          onOpenChange={setShowBiomeModal}
+          onConfirm={(biome) => {
+            setShowBiomeModal(false);
+            handleStartNewGame(biome);
+          }}
         />
       </main>
     </MultiplayerContextProvider>

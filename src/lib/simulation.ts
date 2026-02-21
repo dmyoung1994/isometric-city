@@ -22,6 +22,7 @@ import {
   INDUSTRIAL_BUILDINGS,
   TOOL_INFO,
 } from '@/types/game';
+import { DEFAULT_BIOME_ID, getBiome, type BiomeId } from '@/lib/biomes';
 import { generateCityName, generateWaterName } from './names';
 import { isMobile } from 'react-device-detect';
 
@@ -100,7 +101,13 @@ export function perlinNoise(x: number, y: number, seed: number, octaves: number 
 }
 
 // Generate 2-3 large, round lakes and return water bodies
-function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] {
+function generateLakes(
+  grid: Tile[][],
+  size: number,
+  seed: number,
+  lakeCountRange: [number, number],
+  lakeSizeRange: [number, number]
+): WaterBody[] {
   // Use noise to find potential lake centers - look for low points
   const lakeNoise = (x: number, y: number) => perlinNoise(x, y, seed + 1000, 3);
   
@@ -172,7 +179,9 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
   
   // Sort by noise value (lowest first) and pick 2-3 best candidates
   lakeCenters.sort((a, b) => a.noise - b.noise);
-  const numLakes = 2 + Math.floor(Math.random() * 2); // 2 or 3 lakes
+  const [minLakes, maxLakes] = lakeCountRange;
+  const lakeCountSpan = Math.max(0, maxLakes - minLakes);
+  const numLakes = Math.max(1, minLakes + Math.floor(Math.random() * (lakeCountSpan + 1)));
   const selectedCenters = lakeCenters.slice(0, Math.min(numLakes, lakeCenters.length));
   
   const waterBodies: WaterBody[] = [];
@@ -180,8 +189,9 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
   
   // Grow lakes from each center using radial expansion for rounder shapes
   for (const center of selectedCenters) {
-    // Target size: 40-80 tiles for bigger lakes
-    const targetSize = 40 + Math.floor(Math.random() * 41);
+    const [minLakeSize, maxLakeSize] = lakeSizeRange;
+    const lakeSizeSpan = Math.max(0, maxLakeSize - minLakeSize);
+    const targetSize = Math.max(10, minLakeSize + Math.floor(Math.random() * (lakeSizeSpan + 1)));
     const lakeTiles: { x: number; y: number }[] = [{ x: center.x, y: center.y }];
     const candidates: { x: number; y: number; dist: number; noise: number }[] = [];
     
@@ -269,9 +279,15 @@ function generateLakes(grid: Tile[][], size: number, seed: number): WaterBody[] 
 }
 
 // Generate ocean connections on map edges (sometimes) with organic coastlines
-function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[] {
+function generateOceans(
+  grid: Tile[][],
+  size: number,
+  seed: number,
+  oceanChance: number,
+  oceanDepthMultiplier: number
+): WaterBody[] {
   const waterBodies: WaterBody[] = [];
-  const oceanChance = 0.4; // 40% chance per edge
+  const edgeOceanChance = Math.max(0, Math.min(1, oceanChance));
   
   // Use noise for coastline variation
   const coastNoise = (x: number, y: number) => perlinNoise(x, y, seed + 2000, 3);
@@ -280,9 +296,9 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
   const edges: Array<{ side: 'north' | 'east' | 'south' | 'west'; tiles: { x: number; y: number }[] }> = [];
   
   // Ocean parameters
-  const baseDepth = Math.max(4, Math.floor(size * 0.12));
-  const depthVariation = Math.max(4, Math.floor(size * 0.08));
-  const maxDepth = Math.floor(size * 0.18);
+  const baseDepth = Math.max(4, Math.floor(size * 0.12 * oceanDepthMultiplier));
+  const depthVariation = Math.max(4, Math.floor(size * 0.08 * oceanDepthMultiplier));
+  const maxDepth = Math.floor(size * 0.18 * oceanDepthMultiplier);
   
   // Helper to generate organic ocean section along an edge
   const generateOceanEdge = (
@@ -337,7 +353,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
   };
   
   // North edge (top, y=0, extends downward)
-  if (Math.random() < oceanChance) {
+  if (Math.random() < edgeOceanChance) {
     const tiles = generateOceanEdge(true, 0, 1);
     if (tiles.length > 0) {
       edges.push({ side: 'north', tiles });
@@ -345,7 +361,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
   }
   
   // South edge (bottom, y=size-1, extends upward)
-  if (Math.random() < oceanChance) {
+  if (Math.random() < edgeOceanChance) {
     const tiles = generateOceanEdge(true, size - 1, -1);
     if (tiles.length > 0) {
       edges.push({ side: 'south', tiles });
@@ -353,7 +369,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
   }
   
   // East edge (right, x=size-1, extends leftward)
-  if (Math.random() < oceanChance) {
+  if (Math.random() < edgeOceanChance) {
     const tiles = generateOceanEdge(false, size - 1, -1);
     if (tiles.length > 0) {
       edges.push({ side: 'east', tiles });
@@ -361,7 +377,7 @@ function generateOceans(grid: Tile[][], size: number, seed: number): WaterBody[]
   }
   
   // West edge (left, x=0, extends rightward)
-  if (Math.random() < oceanChance) {
+  if (Math.random() < edgeOceanChance) {
     const tiles = generateOceanEdge(false, 0, 1);
     if (tiles.length > 0) {
       edges.push({ side: 'west', tiles });
@@ -497,9 +513,10 @@ export function getConnectableCities(
 }
 
 // Generate terrain - grass with scattered trees, lakes, and oceans
-function generateTerrain(size: number): { grid: Tile[][]; waterBodies: WaterBody[] } {
+function generateTerrain(size: number, biomeId: BiomeId): { grid: Tile[][]; waterBodies: WaterBody[] } {
   const grid: Tile[][] = [];
   const seed = Math.random() * 1000;
+  const biome = getBiome(biomeId);
 
   // First pass: create base terrain with grass
   for (let y = 0; y < size; y++) {
@@ -511,10 +528,22 @@ function generateTerrain(size: number): { grid: Tile[][]; waterBodies: WaterBody
   }
   
   // Second pass: add lakes (small contiguous water regions)
-  const lakeBodies = generateLakes(grid, size, seed);
+  const lakeBodies = generateLakes(
+    grid,
+    size,
+    seed,
+    biome.terrain.lakeCountRange,
+    biome.terrain.lakeSizeRange
+  );
   
   // Third pass: add oceans on edges (sometimes)
-  const oceanBodies = generateOceans(grid, size, seed);
+  const oceanBodies = generateOceans(
+    grid,
+    size,
+    seed,
+    biome.terrain.oceanChance,
+    biome.terrain.oceanDepthMultiplier
+  );
   
   // Combine all water bodies
   const waterBodies = [...lakeBodies, ...oceanBodies];
@@ -525,11 +554,11 @@ function generateTerrain(size: number): { grid: Tile[][]; waterBodies: WaterBody
       if (grid[y][x].building.type === 'water') continue; // Don't place trees on water
       
       const treeNoise = perlinNoise(x * 2, y * 2, seed + 500, 2);
-      const isTree = treeNoise > 0.72 && Math.random() > 0.65;
+      const isTree = treeNoise > biome.terrain.treeNoiseThreshold && Math.random() < biome.terrain.treeChance;
       
       // Also add some trees near water for visual appeal
       const nearWater = isNearWater(grid, x, y, size);
-      const isTreeNearWater = nearWater && Math.random() > 0.7;
+      const isTreeNearWater = nearWater && Math.random() < biome.terrain.nearWaterTreeChance;
 
       if (isTree || isTreeNearWater) {
         grid[y][x].building = createBuilding('tree');
@@ -1123,8 +1152,12 @@ function generateUUID(): string {
   });
 }
 
-export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityName: string = 'New City'): GameState {
-  const { grid, waterBodies } = generateTerrain(size);
+export function createInitialGameState(
+  size: number = DEFAULT_GRID_SIZE,
+  cityName: string = 'New City',
+  biome: BiomeId = DEFAULT_BIOME_ID
+): GameState {
+  const { grid, waterBodies } = generateTerrain(size, biome);
   const adjacentCities = generateAdjacentCities();
   
   // Create a default city covering the entire map
@@ -1153,6 +1186,7 @@ export function createInitialGameState(size: number = DEFAULT_GRID_SIZE, cityNam
     grid,
     gridSize: size,
     cityName,
+    biome,
     year: 2024,
     month: 1,
     day: 1,
@@ -3135,9 +3169,13 @@ export function placeLandTerraform(state: GameState, x: number, y: number): Game
 }
 
 // Generate a random advanced city state with developed zones, infrastructure, and buildings
-export function generateRandomAdvancedCity(size: number = DEFAULT_GRID_SIZE, cityName: string = 'Metropolis'): GameState {
+export function generateRandomAdvancedCity(
+  size: number = DEFAULT_GRID_SIZE,
+  cityName: string = 'Metropolis',
+  biome: BiomeId = DEFAULT_BIOME_ID
+): GameState {
   // Start with a base state (terrain generation)
-  const baseState = createInitialGameState(size, cityName);
+  const baseState = createInitialGameState(size, cityName, biome);
   const grid = baseState.grid;
   
   // Helper to check if a region is clear (no water)

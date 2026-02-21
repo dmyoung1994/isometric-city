@@ -7,6 +7,7 @@ import { TOOL_INFO, Tile, Building, BuildingType, AdjacentCity, Tool } from '@/t
 import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency } from '@/lib/simulation';
 import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
 import { getSpriteCoords, BUILDING_TO_SPRITE, SPRITE_VERTICAL_OFFSETS, SPRITE_HORIZONTAL_OFFSETS, getActiveSpritePack } from '@/lib/renderConfig';
+import { getActiveBiome } from '@/lib/biomes';
 import { selectSpriteSource, calculateSpriteCoords, calculateSpriteScale, calculateSpriteOffsets, getSpriteRenderInfo } from '@/components/game/buildingSprite';
 
 // Import shadcn components
@@ -1149,10 +1150,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     function drawIsometricTile(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile, highlight: boolean, currentZoom: number, skipGreyBase: boolean = false, skipGreenBase: boolean = false) {
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
+      const biomeColors = getActiveBiome().colors;
       
       // Determine tile colors (top face and shading)
-      let topColor = '#4a7c3f'; // grass
-      let strokeColor = '#2d4a26';
+      let topColor = biomeColors.zoneColors.none.top;
+      let strokeColor = biomeColors.zoneColors.none.stroke;
 
       // PERF: Use pre-computed tile metadata for grey base check (O(1) lookup)
       const tileRenderMetadata = getTileMetadata(tile.x, tile.y);
@@ -1166,40 +1168,28 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       const hasGreyBase = tileRenderMetadata?.needsGreyBase ?? false;
       
       if (tile.building.type === 'water') {
-        topColor = '#2563eb';
-        strokeColor = '#1e3a8a';
+        topColor = biomeColors.waterBaseColors.top;
+        strokeColor = biomeColors.waterBaseColors.stroke;
       } else if (tile.building.type === 'road' || tile.building.type === 'bridge') {
         topColor = '#4a4a4a';
         strokeColor = '#333';
       } else if (isPark) {
-        topColor = '#4a7c3f';
-        strokeColor = '#2d4a26';
+        topColor = biomeColors.zoneColors.none.top;
+        strokeColor = biomeColors.zoneColors.none.stroke;
       } else if (hasGreyBase && !skipGreyBase) {
         // Grey/concrete base tiles for ALL buildings (except parks)
         // Skip if skipGreyBase is true (will be drawn later after water)
-        topColor = '#6b7280';
-        strokeColor = '#374151';
+        topColor = biomeColors.greyTileColors.top;
+        strokeColor = biomeColors.greyTileColors.stroke;
       } else if (tile.zone === 'residential') {
-        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
-          topColor = '#3d7c3f';
-        } else {
-          topColor = '#2d5a2d';
-        }
-        strokeColor = '#22c55e';
+        topColor = biomeColors.zoneColors.residential.top;
+        strokeColor = biomeColors.zoneColors.residential.stroke;
       } else if (tile.zone === 'commercial') {
-        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
-          topColor = '#3a5c7c';
-        } else {
-          topColor = '#2a4a6a';
-        }
-        strokeColor = '#3b82f6';
+        topColor = biomeColors.zoneColors.commercial.top;
+        strokeColor = biomeColors.zoneColors.commercial.stroke;
       } else if (tile.zone === 'industrial') {
-        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
-          topColor = '#7c5c3a';
-        } else {
-          topColor = '#6a4a2a';
-        }
-        strokeColor = '#f59e0b';
+        topColor = biomeColors.zoneColors.industrial.top;
+        strokeColor = biomeColors.zoneColors.industrial.stroke;
       }
       
       // Skip drawing green base for tiles adjacent to water (will be drawn later over water)

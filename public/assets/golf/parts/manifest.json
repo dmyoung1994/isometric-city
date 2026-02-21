@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "green": 3,
+    "sand": 3,
+    "rough": 2
+  },
+  "prompt_overrides": {}
+}

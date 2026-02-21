@@ -7,6 +7,7 @@ import { Building } from './buildings';
 import { ZoneType } from './zones';
 import { Stats, Budget, CityEconomy, HistoryPoint } from './economy';
 import { ServiceCoverage } from './services';
+import type { BiomeId } from '@/lib/biomes';
 
 export type Tool =
   | 'select' | 'bulldoze' | 'road' | 'rail' | 'subway'
@@ -152,6 +153,7 @@ export interface GameState {
   grid: Tile[][];
   gridSize: number;
   cityName: string;
+  biome: BiomeId;
   year: number;
   month: number;
   day: number;

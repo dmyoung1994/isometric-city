@@ -1,3 +1,10 @@
+import {
+  GOLF_SPRITE_BUILDINGS,
+  GOLF_SPRITE_COLS,
+  GOLF_SPRITE_ORDER,
+  GOLF_SPRITE_ROWS,
+} from './golfSpriteSheet';
+
 // Rendering configuration
 // ============================================================================
 // SPRITE PACK TYPE DEFINITION
@@ -177,6 +184,93 @@ export interface SpritePack {
   // Optional global scale multiplier for all sprites in this pack
   globalScale?: number;
 }
+
+// ============================================================================
+// GOLF SPRITE PACK (IsoGolf)
+// ============================================================================
+const GOLF_TILE_HEIGHT = 64 * 0.6;
+
+export const GOLF_SPRITE_PACK: SpritePack = {
+  id: 'golf',
+  name: 'Golf Course',
+  src: '/assets/golf/golf_course.svg',
+  cols: GOLF_SPRITE_COLS,
+  rows: GOLF_SPRITE_ROWS,
+  layout: 'row',
+  spriteOrder: GOLF_SPRITE_ORDER,
+  verticalOffsets: {},
+  horizontalOffsets: {},
+  buildingToSprite: Object.fromEntries(GOLF_SPRITE_ORDER.map(key => [key, key])),
+  parksSrc: '/assets/golf/golf_course.svg',
+  parksCols: GOLF_SPRITE_COLS,
+  parksRows: GOLF_SPRITE_ROWS,
+  parksBuildings: GOLF_SPRITE_BUILDINGS,
+  parksVerticalOffsets: {
+    fairway: -10 / GOLF_TILE_HEIGHT,
+    green: -10 / GOLF_TILE_HEIGHT,
+    tee: -10 / GOLF_TILE_HEIGHT,
+    rough: -10 / GOLF_TILE_HEIGHT,
+    sand: -10 / GOLF_TILE_HEIGHT,
+    water: -10 / GOLF_TILE_HEIGHT,
+    cart_path: -10 / GOLF_TILE_HEIGHT,
+    hole_flag: -18 / GOLF_TILE_HEIGHT,
+    golf_ball: -6 / GOLF_TILE_HEIGHT,
+    golfer_idle: -14 / GOLF_TILE_HEIGHT,
+    golfer_walk: -14 / GOLF_TILE_HEIGHT,
+    golfer_swing: -16 / GOLF_TILE_HEIGHT,
+    clubhouse_l1: -22 / GOLF_TILE_HEIGHT,
+    driving_range_l1: -20 / GOLF_TILE_HEIGHT,
+    maintenance_shed_l1: -18 / GOLF_TILE_HEIGHT,
+    practice_green_l1: -16 / GOLF_TILE_HEIGHT,
+    pro_shop_l1: -20 / GOLF_TILE_HEIGHT,
+    restaurant_l1: -20 / GOLF_TILE_HEIGHT,
+    clubhouse_l2: -24 / GOLF_TILE_HEIGHT,
+    driving_range_l2: -22 / GOLF_TILE_HEIGHT,
+    maintenance_shed_l2: -20 / GOLF_TILE_HEIGHT,
+    practice_green_l2: -18 / GOLF_TILE_HEIGHT,
+    pro_shop_l2: -22 / GOLF_TILE_HEIGHT,
+    restaurant_l2: -22 / GOLF_TILE_HEIGHT,
+    clubhouse_l3: -26 / GOLF_TILE_HEIGHT,
+    driving_range_l3: -24 / GOLF_TILE_HEIGHT,
+    maintenance_shed_l3: -22 / GOLF_TILE_HEIGHT,
+    practice_green_l3: -20 / GOLF_TILE_HEIGHT,
+    pro_shop_l3: -24 / GOLF_TILE_HEIGHT,
+    restaurant_l3: -24 / GOLF_TILE_HEIGHT,
+  },
+  parksHorizontalOffsets: {},
+  parksScales: {
+    fairway: 0.9,
+    green: 0.9,
+    tee: 0.9,
+    rough: 0.9,
+    sand: 0.9,
+    water: 0.9,
+    cart_path: 0.9,
+    hole_flag: 0.75,
+    golf_ball: 0.45,
+    golfer_idle: 0.6,
+    golfer_walk: 0.6,
+    golfer_swing: 0.6,
+    clubhouse_l1: 0.9,
+    driving_range_l1: 0.9,
+    maintenance_shed_l1: 0.9,
+    practice_green_l1: 0.9,
+    pro_shop_l1: 0.9,
+    restaurant_l1: 0.9,
+    clubhouse_l2: 0.9,
+    driving_range_l2: 0.9,
+    maintenance_shed_l2: 0.9,
+    practice_green_l2: 0.9,
+    pro_shop_l2: 0.9,
+    restaurant_l2: 0.9,
+    clubhouse_l3: 0.9,
+    driving_range_l3: 0.9,
+    maintenance_shed_l3: 0.9,
+    practice_green_l3: 0.9,
+    pro_shop_l3: 0.9,
+    restaurant_l3: 0.9,
+  },
+};
 
 // ============================================================================
 // SPRITE PACK: SPRITES4 (Default)

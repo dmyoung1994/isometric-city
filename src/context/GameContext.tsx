@@ -36,6 +36,7 @@ import {
   setActiveSpritePack,
   SpritePack,
 } from '@/lib/renderConfig';
+import { DEFAULT_BIOME_ID, setActiveBiome, type BiomeId } from '@/lib/biomes';
 
 const STORAGE_KEY = 'isocity-game-state';
 const SAVED_CITY_STORAGE_KEY = 'isocity-saved-city'; // For restoring after viewing shared city
@@ -73,7 +74,7 @@ type GameContextValue = {
   discoverCity: (cityId: string) => void;
   checkAndDiscoverCities: (onDiscover?: (city: { id: string; direction: 'north' | 'south' | 'east' | 'west'; name: string }) => void) => void;
   setDisastersEnabled: (enabled: boolean) => void;
-  newGame: (name?: string, size?: number) => void;
+  newGame: (name?: string, size?: number, biome?: BiomeId) => void;
   loadState: (stateString: string) => boolean;
   exportState: () => string;
   generateRandomCity: () => void;
@@ -205,6 +206,9 @@ function loadGameState(): GameState | null {
           parsed.stats &&
           parsed.stats.money !== undefined &&
           parsed.stats.population !== undefined) {
+        if (!parsed.biome) {
+          parsed.biome = DEFAULT_BIOME_ID;
+        }
         // Migrate park_medium to park_large
         if (parsed.grid) {
           for (let y = 0; y < parsed.grid.length; y++) {
@@ -647,7 +651,7 @@ function deleteCityState(cityId: string): void {
 
 export function GameProvider({ children, startFresh = false }: { children: React.ReactNode; startFresh?: boolean }) {
   // Start with a default state, we'll load from localStorage after mount (unless startFresh is true)
-  const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity'));
+  const [state, setState] = useState<GameState>(() => createInitialGameState(DEFAULT_GRID_SIZE, 'IsoCity', DEFAULT_BIOME_ID));
   
   const [hasExistingGame, setHasExistingGame] = useState(false);
   const [isStateReady, setIsStateReady] = useState(false);
@@ -703,6 +707,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
     // Mark state as ready - consumers should wait for this before using state
     setIsStateReady(true);
   }, [startFresh]);
+
+  // Keep active biome in sync with state
+  useEffect(() => {
+    setActiveBiome(state.biome ?? DEFAULT_BIOME_ID);
+  }, [state.biome]);
   
   // Track the state that needs to be saved
   const lastSaveTimeRef = useRef<number>(0);
@@ -1125,9 +1134,9 @@ export function GameProvider({ children, startFresh = false }: { children: React
       ? 12  // Noon - full daylight
       : 22; // Night time
 
-  const newGame = useCallback((name?: string, size?: number) => {
+  const newGame = useCallback((name?: string, size?: number, biome: BiomeId = DEFAULT_BIOME_ID) => {
     clearGameState(); // Clear saved state when starting fresh
-    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'IsoCity');
+    const fresh = createInitialGameState(size ?? DEFAULT_GRID_SIZE, name || 'IsoCity', biome);
     // Increment gameVersion from current state to ensure vehicles/entities are cleared
     setState((prev) => ({
       ...fresh,
@@ -1147,6 +1156,9 @@ export function GameProvider({ children, startFresh = false }: { children: React
           parsed.stats &&
           parsed.stats.money !== undefined &&
           parsed.stats.population !== undefined) {
+        if (!parsed.biome) {
+          parsed.biome = DEFAULT_BIOME_ID;
+        }
         // Ensure new fields exist for backward compatibility
         if (!parsed.adjacentCities) {
           parsed.adjacentCities = [];

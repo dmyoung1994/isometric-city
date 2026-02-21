@@ -54,6 +54,13 @@ export interface SpriteRenderInfo {
   shouldFlip: boolean;
 }
 
+type SpriteBuildingLike = {
+  constructionProgress?: number;
+  abandoned?: boolean;
+  level?: number;
+  flipped?: boolean;
+};
+
 // ============================================================================
 // Sprite Source Selection
 // ============================================================================
@@ -74,8 +81,8 @@ export interface SpriteRenderInfo {
  * 10. Normal (default sprite sheet)
  */
 export function selectSpriteSource(
-  buildingType: BuildingType,
-  building: Building,
+  buildingType: BuildingType | string,
+  building: SpriteBuildingLike,
   tileX: number,
   tileY: number,
   activePack: SpritePack = getActiveSpritePack()
@@ -222,8 +229,9 @@ export function selectSpriteSource(
     const variants = activePack.servicesVariants[buildingType];
     if (variants.length > 0) {
       // Use building.level (1-based) to select variant (0-based index)
-      // Clamp level to available variants: Math.min(building.level - 1, variants.length - 1)
-      const levelIndex = Math.max(0, Math.min(building.level - 1, variants.length - 1));
+      // Clamp level to available variants: Math.min(level - 1, variants.length - 1)
+      const level = building.level ?? 1;
+      const levelIndex = Math.max(0, Math.min(level - 1, variants.length - 1));
       return {
         source: activePack.servicesSrc,
         variantType: 'services',
@@ -236,7 +244,8 @@ export function selectSpriteSource(
   if (activePack.infrastructureSrc && activePack.infrastructureVariants && activePack.infrastructureVariants[buildingType]) {
     const variants = activePack.infrastructureVariants[buildingType];
     if (variants.length > 0) {
-      const levelIndex = Math.max(0, Math.min(building.level - 1, variants.length - 1));
+      const level = building.level ?? 1;
+      const levelIndex = Math.max(0, Math.min(level - 1, variants.length - 1));
       return {
         source: activePack.infrastructureSrc,
         variantType: 'infrastructure',
@@ -512,13 +521,13 @@ export function calculateSpriteCoords(
  * Calculate the scale multiplier for a building sprite.
  */
 export function calculateSpriteScale(
-  buildingType: BuildingType,
+  buildingType: BuildingType | string,
   source: SpriteSourceResult,
-  building: Building,
+  building: SpriteBuildingLike,
   activePack: SpritePack = getActiveSpritePack()
 ): number {
   const { variantType, variant } = source;
-  const buildingSize = getBuildingSize(buildingType);
+  const buildingSize = getBuildingSize(buildingType as BuildingType);
   const isMultiTile = buildingSize.width > 1 || buildingSize.height > 1;
   const isConstructionPhase = building.constructionProgress !== undefined && 
                               building.constructionProgress >= 40 && 
@@ -601,8 +610,14 @@ export function calculateSpriteScale(
   }
 
   if ((variantType === 'parks' || variantType === 'parksConstruction') &&
-      activePack.parksScales && buildingType in activePack.parksScales) {
-    scaleMultiplier *= activePack.parksScales[buildingType];
+      activePack.parksScales) {
+    const baseKey = typeof buildingType === 'string'
+      ? buildingType.replace(/__v\d+$/, '')
+      : buildingType;
+    const scaleKey = buildingType in activePack.parksScales ? buildingType : baseKey;
+    if (scaleKey in activePack.parksScales) {
+      scaleMultiplier *= activePack.parksScales[scaleKey];
+    }
   }
   
   if (isConstructionPhase && activePack.constructionScales && buildingType in activePack.constructionScales) {
@@ -629,9 +644,9 @@ export function calculateSpriteScale(
  * Returns offsets as multipliers of tile height/width.
  */
 export function calculateSpriteOffsets(
-  buildingType: BuildingType,
+  buildingType: BuildingType | string,
   source: SpriteSourceResult,
-  building: Building,
+  building: SpriteBuildingLike,
   activePack: SpritePack = getActiveSpritePack()
 ): { vertical: number; horizontal: number } {
   const { variantType, variant } = source;
@@ -640,23 +655,30 @@ export function calculateSpriteOffsets(
                               building.constructionProgress < 100;
   const isAbandoned = building.abandoned === true;
   const isParksBuilding = variantType === 'parks' || variantType === 'parksConstruction';
+  const baseKey = typeof buildingType === 'string'
+    ? buildingType.replace(/__v\d+$/, '')
+    : buildingType;
   
   let verticalOffset = 0;
   let horizontalOffset = 0;
   
   // Determine vertical offset based on priority order
-  if (isConstructionPhase && isParksBuilding && activePack.parksConstructionVerticalOffsets && 
-      buildingType in activePack.parksConstructionVerticalOffsets) {
-    verticalOffset = activePack.parksConstructionVerticalOffsets[buildingType];
+  if (isConstructionPhase && isParksBuilding && activePack.parksConstructionVerticalOffsets) {
+    const offsetKey = buildingType in activePack.parksConstructionVerticalOffsets ? buildingType : baseKey;
+    if (offsetKey in activePack.parksConstructionVerticalOffsets) {
+      verticalOffset = activePack.parksConstructionVerticalOffsets[offsetKey];
+    }
   } else if (isConstructionPhase && activePack.constructionVerticalOffsets && 
              buildingType in activePack.constructionVerticalOffsets) {
     verticalOffset = activePack.constructionVerticalOffsets[buildingType];
   } else if (isAbandoned && activePack.abandonedVerticalOffsets && 
              buildingType in activePack.abandonedVerticalOffsets) {
     verticalOffset = activePack.abandonedVerticalOffsets[buildingType];
-  } else if (isParksBuilding && activePack.parksVerticalOffsets && 
-             buildingType in activePack.parksVerticalOffsets) {
-    verticalOffset = activePack.parksVerticalOffsets[buildingType];
+  } else if (isParksBuilding && activePack.parksVerticalOffsets) {
+    const offsetKey = buildingType in activePack.parksVerticalOffsets ? buildingType : baseKey;
+    if (offsetKey in activePack.parksVerticalOffsets) {
+      verticalOffset = activePack.parksVerticalOffsets[offsetKey];
+    }
   } else if (variantType === 'dense' && activePack.denseVerticalOffsets && 
              buildingType in activePack.denseVerticalOffsets) {
     verticalOffset = activePack.denseVerticalOffsets[buildingType];
@@ -723,9 +745,11 @@ export function calculateSpriteOffsets(
     horizontalOffset = SPRITE_HORIZONTAL_OFFSETS[spriteKey];
   }
   
-  if (isParksBuilding && activePack.parksHorizontalOffsets && 
-      buildingType in activePack.parksHorizontalOffsets) {
-    horizontalOffset = activePack.parksHorizontalOffsets[buildingType];
+  if (isParksBuilding && activePack.parksHorizontalOffsets) {
+    const offsetKey = buildingType in activePack.parksHorizontalOffsets ? buildingType : baseKey;
+    if (offsetKey in activePack.parksHorizontalOffsets) {
+      horizontalOffset = activePack.parksHorizontalOffsets[offsetKey];
+    }
   }
   
   if (variantType === 'farm' && activePack.farmsHorizontalOffsets && 
@@ -765,8 +789,8 @@ export function calculateSpriteOffsets(
  * Combines source selection, coordinate calculation, and positioning.
  */
 export function getSpriteRenderInfo(
-  buildingType: BuildingType,
-  building: Building,
+  buildingType: BuildingType | string,
+  building: SpriteBuildingLike,
   tileX: number,
   tileY: number,
   screenX: number,
@@ -802,7 +826,7 @@ export function getSpriteRenderInfo(
   const destHeight = destWidth * aspectRatio;
   
   // Calculate position
-  const buildingSize = getBuildingSize(buildingType);
+  const buildingSize = getBuildingSize(buildingType as BuildingType);
   const isMultiTile = buildingSize.width > 1 || buildingSize.height > 1;
   
   let drawPosX = screenX;
@@ -832,7 +856,7 @@ export function getSpriteRenderInfo(
   const drawY = drawPosY + h - destHeight + verticalPush;
   
   // Determine flip - waterfront assets should never be mirrored
-  const isWaterfrontAsset = requiresWaterAdjacency(buildingType);
+  const isWaterfrontAsset = requiresWaterAdjacency(buildingType as BuildingType);
   const shouldRoadMirror = (() => {
     if (isWaterfrontAsset) return false;
     

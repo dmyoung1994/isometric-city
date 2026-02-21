@@ -4,6 +4,7 @@
  */
 
 import { Tile, ZoneType } from '@/types/game';
+import { getActiveBiome } from '@/lib/biomes';
 import { TILE_WIDTH, TILE_HEIGHT } from './types';
 
 // ============================================================================
@@ -34,62 +35,29 @@ export type BeachEdge = 'north' | 'east' | 'south' | 'west';
 // ============================================================================
 
 /** Zone-based color schemes for grass tiles */
-export const ZONE_COLORS: Record<ZoneType, TileColorScheme> = {
-  none: {
-    top: '#4a7c3f',
-    left: '#3d6634',
-    right: '#5a8f4f',
-    stroke: '#2d4a26',
-  },
-  residential: {
-    top: '#2d5a2d',
-    left: '#1d4a1d',
-    right: '#3d6a3d',
-    stroke: '#22c55e',
-  },
-  commercial: {
-    top: '#2a4a6a',
-    left: '#1a3a5a',
-    right: '#3a5a7a',
-    stroke: '#3b82f6',
-  },
-  industrial: {
-    top: '#6a4a2a',
-    left: '#5a3a1a',
-    right: '#7a5a3a',
-    stroke: '#f59e0b',
-  },
-};
+export function getZoneColors(): Record<ZoneType, TileColorScheme> {
+  return getActiveBiome().colors.zoneColors;
+}
 
 /** Zone border colors (dashed lines) */
-export const ZONE_BORDER_COLORS: Record<ZoneType, string> = {
-  none: 'transparent',
-  residential: '#22c55e',
-  commercial: '#3b82f6',
-  industrial: '#f59e0b',
-};
+export function getZoneBorderColors(): Record<ZoneType, string> {
+  return getActiveBiome().colors.zoneBorderColors;
+}
 
 /** Grey base tile colors for buildings */
-export const GREY_TILE_COLORS: TileColorScheme = {
-  top: '#6b7280',
-  left: '#4b5563',
-  right: '#9ca3af',
-  stroke: '#374151',
-};
+export function getGreyTileColors(): TileColorScheme {
+  return getActiveBiome().colors.greyTileColors;
+}
 
 /** Beach/sidewalk colors */
-export const BEACH_COLORS = {
-  fill: '#d4a574',
-  curb: '#b8956a',
-} as const;
+export function getBeachColors(): { fill: string; curb: string } {
+  return getActiveBiome().colors.beachColors;
+}
 
 /** Dirt/foundation plot colors for construction phase 1 */
-export const FOUNDATION_COLORS: TileColorScheme = {
-  top: '#a67c52',     // Sandy brown top
-  left: '#8b6914',    // Darker ochre left face
-  right: '#c4a35a',   // Lighter tan right face
-  stroke: '#6b4423',  // Dark brown stroke
-};
+export function getFoundationColors(): TileColorScheme {
+  return getActiveBiome().colors.foundationColors;
+}
 
 // ============================================================================
 // Geometry Helpers
@@ -175,7 +143,7 @@ export function drawGreenBaseTile(
   tile: Tile,
   currentZoom: number
 ): void {
-  const colors = ZONE_COLORS[tile.zone];
+  const colors = getZoneColors()[tile.zone];
 
   // Draw the base diamond with stroke only when zoomed in
   drawIsometricDiamond(ctx, x, y, colors, {
@@ -185,7 +153,7 @@ export function drawGreenBaseTile(
 
   // Draw zone border with dashed line when zoomed in enough
   if (tile.zone !== 'none' && currentZoom >= 0.95) {
-    const borderColor = ZONE_BORDER_COLORS[tile.zone];
+    const borderColor = getZoneBorderColors()[tile.zone];
     const corners = getDiamondCorners(x, y);
 
     ctx.strokeStyle = borderColor;
@@ -212,7 +180,7 @@ export function drawGreyBaseTile(
   _tile: Tile,
   currentZoom: number
 ): void {
-  drawIsometricDiamond(ctx, x, y, GREY_TILE_COLORS, {
+  drawIsometricDiamond(ctx, x, y, getGreyTileColors(), {
     drawStroke: currentZoom >= 0.6,
     strokeWidth: 0.5,
   });
@@ -241,7 +209,8 @@ export function drawFoundationPlot(
   const leftY = y + h / 2;
   
   // Draw flat top face of the dirt plot
-  ctx.fillStyle = FOUNDATION_COLORS.top;
+  const foundationColors = getFoundationColors();
+  ctx.fillStyle = foundationColors.top;
   ctx.beginPath();
   ctx.moveTo(topX, topY);
   ctx.lineTo(rightX, rightY);
@@ -269,7 +238,7 @@ export function drawFoundationPlot(
   
   // Draw stroke around the tile if zoomed in enough
   if (currentZoom >= 0.6) {
-    ctx.strokeStyle = FOUNDATION_COLORS.stroke;
+    ctx.strokeStyle = foundationColors.stroke;
     ctx.lineWidth = 0.5;
     
     ctx.beginPath();
@@ -346,7 +315,8 @@ function drawBeachEdge(
   }
 
   // Draw curb (darker line at outer edge)
-  ctx.strokeStyle = BEACH_COLORS.curb;
+  const beachColors = getBeachColors();
+  ctx.strokeStyle = beachColors.curb;
   ctx.lineWidth = BEACH_CONFIG.curbWidth;
   ctx.beginPath();
   ctx.moveTo(actualStartX, actualStartY);
@@ -354,7 +324,7 @@ function drawBeachEdge(
   ctx.stroke();
 
   // Draw beach fill
-  ctx.fillStyle = BEACH_COLORS.fill;
+  ctx.fillStyle = beachColors.fill;
   ctx.beginPath();
   ctx.moveTo(actualStartX, actualStartY);
   ctx.lineTo(actualEndX, actualEndY);
@@ -420,7 +390,8 @@ function drawBeachCorner(
     beachWidth
   );
 
-  ctx.fillStyle = BEACH_COLORS.fill;
+  const beachColors = getBeachColors();
+  ctx.fillStyle = beachColors.fill;
   ctx.beginPath();
   ctx.moveTo(cornerPoint.x, cornerPoint.y);
   ctx.lineTo(inner1.x, inner1.y);
@@ -613,7 +584,8 @@ function drawBeachEdgeOnWater(
   }
 
   // Draw beach fill (from edge inward)
-  ctx.fillStyle = BEACH_COLORS.fill;
+  const beachColors = getBeachColors();
+  ctx.fillStyle = beachColors.fill;
   ctx.beginPath();
   ctx.moveTo(actualStartX, actualStartY);
   ctx.lineTo(actualEndX, actualEndY);
@@ -623,7 +595,8 @@ function drawBeachEdgeOnWater(
   ctx.fill();
 
   // Draw curb (darker line at outer edge - the water's edge)
-  ctx.strokeStyle = BEACH_COLORS.curb;
+  const beachColors = getBeachColors();
+  ctx.strokeStyle = beachColors.curb;
   ctx.lineWidth = BEACH_CONFIG.curbWidth;
   ctx.beginPath();
   ctx.moveTo(actualStartX + inwardDx * beachWidth, actualStartY + inwardDy * beachWidth);
@@ -656,7 +629,8 @@ function drawBeachCornerOnWater(
     beachWidth
   );
 
-  ctx.fillStyle = BEACH_COLORS.fill;
+  const beachColors = getBeachColors();
+  ctx.fillStyle = beachColors.fill;
   ctx.beginPath();
   ctx.moveTo(cornerPoint.x, cornerPoint.y);
   ctx.lineTo(inner1.x, inner1.y);

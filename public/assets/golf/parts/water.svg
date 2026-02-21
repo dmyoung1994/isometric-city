@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" shape-rendering="crispEdges">
+<defs>
+<linearGradient id="baseShade" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+<stop offset="100%" stop-color="#000000" stop-opacity="0.15"/>
+</linearGradient>
+</defs>
+<ellipse cx="64" cy="70" rx="40" ry="10" fill="rgba(0,0,0,0.15)"/>
+<polygon points="64 16 112 40 64 64 16 40" fill="#4aa6d4" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+<polygon points="64 16 112 40 64 64 16 40" fill="url(#baseShade)" opacity="0.3"/>
+<path d="M32 36 Q64 32 96 36" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+<path d="M32 42 Q64 38 96 42" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+<path d="M32 48 Q64 44 96 48" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+</svg>
